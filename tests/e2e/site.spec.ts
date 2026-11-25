@@ -111,3 +111,29 @@ for (const url of ['/', '/ja/', '/ko/projects/72hours/', '/ja/resume/', '/about/
     }
   });
 }
+
+test('blog: translated post links both ways; missing Korean is marked, not faked', async ({ page }) => {
+  await page.goto('/ja/blog/sqlite-index-group-by/');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
+  await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveCount(1);
+  await expect(page.locator('link[rel="alternate"][hreflang="ko"]')).toHaveCount(0);
+  await expect(page.locator('.lang-switch .missing')).toHaveText(/한국어/);
+  await page.getByRole('link', { name: 'EN', exact: true }).click();
+  await expect(page).toHaveURL(/\/blog\/sqlite-index-group-by\/$/);
+});
+
+test('blog: Korean index lists the post under other languages', async ({ page }) => {
+  await page.goto('/ko/blog/');
+  const section = page.locator('section[aria-labelledby="other-lang"]');
+  await expect(section).toBeVisible();
+  await expect(section.getByRole('link', { name: /GROUP BY/ })).toHaveCount(1);
+});
+
+test('blog: nav, recent writing and RSS appear once a post exists', async ({ page, request }) => {
+  await page.goto('/');
+  await expect(page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Blog' })).toBeVisible();
+  await expect(page.locator('#writing')).toBeVisible();
+  const rss = await request.get('/ja/rss.xml');
+  expect(rss.status()).toBe(200);
+  expect(await rss.text()).toContain('sqlite-index-group-by');
+});
