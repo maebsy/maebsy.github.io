@@ -1,0 +1,36 @@
+---
+import { formatMonth, type Locale } from '../i18n/locales';
+import { t } from '../i18n/ui';
+import { TIMELINE, type TimelineItem } from '../data/profile';
+import { factVisible } from '../data/site';
+
+interface Props {
+  locale: Locale;
+  kind?: TimelineItem['kind'];
+}
+const { locale, kind } = Astro.props;
+const items = TIMELINE.filter((i) => (kind ? i.kind === kind : true)).filter((i) => factVisible(i.verified));
+
+function when(i: TimelineItem): string {
+  if (i.start && i.end) return i.start === i.end ? formatMonth(i.start) : `${formatMonth(i.start)} – ${formatMonth(i.end)}`;
+  if (i.start) return `${formatMonth(i.start)} –`;
+  return '—';
+}
+---
+{items.length > 0 && (
+  <ol class="timeline">
+    {items.map((i) => (
+      <li>
+        <span class="when">{when(i)}</span>
+        <div>
+          <p class="what">
+            {i.link ? <a href={i.link}>{i.title[locale]}</a> : i.title[locale]}
+            {!i.verified && <> <span class="flag">{t(locale, 'notice.unverified')}</span></>}
+          </p>
+          <p class="where">{i.org[locale]}</p>
+          {i.detail && <p class="detail">{i.detail[locale]}</p>}
+        </div>
+      </li>
+    ))}
+  </ol>
+)}

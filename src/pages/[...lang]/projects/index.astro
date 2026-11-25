@@ -1,0 +1,28 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Sheet from '../../../components/Sheet.astro';
+import ProjectIndex from '../../../components/ProjectIndex.astro';
+import OtherWork from '../../../components/OtherWork.astro';
+import { langPaths, localeFromParam } from '../../../i18n/locales';
+import { useT } from '../../../i18n/ui';
+import { staticAlternates } from '../../../lib/content';
+
+export function getStaticPaths() {
+  return langPaths();
+}
+const locale = localeFromParam(Astro.params.lang);
+const tr = useT(locale);
+---
+<Base locale={locale} title={tr('projects.title')} alternates={staticAlternates('projects')} nav="projects">
+  <header class="hero">
+    <h1>{tr('projects.title')}</h1>
+    <p class="lede">{tr('projects.lede')}</p>
+  </header>
+  <Sheet num="01" title={tr('projects.featured')} id="featured">
+    <ProjectIndex locale={locale} />
+  </Sheet>
+  <Sheet num="02" title={tr('projects.other')} id="other">
+    <p class="muted small">{tr('projects.other.note')}</p>
+    <OtherWork locale={locale} />
+  </Sheet>
+</Base>

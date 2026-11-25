@@ -1,0 +1,28 @@
+{
+  "name": "maebsy-portfolio",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "packageManager": "bun@1.4.4",
+  "scripts": {
+    "dev": "astro dev",
+    "check": "astro check && bun run scripts/validate-content.ts",
+    "build": "SITE_MODE=production astro build && bun run scripts/check-dist.ts",
+    "build:preview": "SITE_MODE=preview astro build",
+    "preview": "astro preview",
+    "test": "bun test tests/unit",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@astrojs/rss": "4.0.18",
+    "@astrojs/sitemap": "3.7.6",
+    "astro": "7.4.10"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.12",
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.65.1",
+    "@types/bun": "1.4.4",
+    "typescript": "6.0.3"
+  }
+}

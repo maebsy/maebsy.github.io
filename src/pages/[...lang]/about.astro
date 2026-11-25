@@ -1,0 +1,48 @@
+---
+import Base from '../../layouts/Base.astro';
+import Sheet from '../../components/Sheet.astro';
+import SkillList from '../../components/SkillList.astro';
+import Timeline from '../../components/Timeline.astro';
+import { langPaths, localeFromParam } from '../../i18n/locales';
+import { useT } from '../../i18n/ui';
+import { PERSON, TIMELINE } from '../../data/profile';
+import { factVisible } from '../../data/site';
+import { ABOUT_INTRO, ABOUT_FOCUS } from '../../data/about';
+import { staticAlternates } from '../../lib/content';
+import { profilePageLd } from '../../lib/jsonld';
+
+export function getStaticPaths() {
+  return langPaths();
+}
+const locale = localeFromParam(Astro.params.lang);
+const tr = useT(locale);
+const alternates = staticAlternates('about');
+const hasEducation = TIMELINE.some((i) => i.kind === 'education' && factVisible(i.verified));
+const n = (i: number) => String(hasEducation ? i : i - 1).padStart(2, '0');
+---
+<Base locale={locale} title={tr('about.title')} alternates={alternates} nav="about" ogType="profile" jsonLd={profilePageLd(locale, alternates[locale])}>
+  <header class="hero">
+    <h1>{tr('about.title')}</h1>
+    <p class="lede">{ABOUT_INTRO[locale]}</p>
+  </header>
+  {hasEducation && (
+    <Sheet num={n(1)} title={tr('about.education')} id="education">
+      <Timeline locale={locale} kind="education" />
+    </Sheet>
+  )}
+  <Sheet num={n(2)} title={tr('about.activities')} id="activities">
+    <Timeline locale={locale} kind="activity" />
+  </Sheet>
+  <Sheet num={n(3)} title={tr('about.skills')} id="skills">
+    <SkillList locale={locale} />
+  </Sheet>
+  <Sheet num={n(4)} title={tr('about.focus')} id="focus">
+    <p class="prose">{ABOUT_FOCUS[locale]}</p>
+  </Sheet>
+  <Sheet num={n(5)} title={tr('about.contact')} id="contact">
+    <p>{tr('home.contact.text')}</p>
+    <ul class="links-inline">
+      {PERSON.links.filter((l) => l.verified).map((l) => <li><a href={l.url}>{l.label}</a></li>)}
+    </ul>
+  </Sheet>
+</Base>

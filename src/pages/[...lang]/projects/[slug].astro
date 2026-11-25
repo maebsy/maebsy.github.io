@@ -1,0 +1,82 @@
+---
+import { render } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import { langParam, localizePath, formatDate, type Locale } from '../../../i18n/locales';
+import { useT, type UIKey } from '../../../i18n/ui';
+import { getProject } from '../../../data/projects';
+import { visibleEntries, alternatesFor } from '../../../lib/content';
+
+export async function getStaticPaths() {
+  const entries = await visibleEntries('projects');
+  return entries.map((entry) => ({
+    params: { lang: langParam(entry.data.locale as Locale), slug: entry.data.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const locale = entry.data.locale as Locale;
+const tr = useT(locale);
+const facts = getProject(entry.data.id);
+const { Content, headings } = await render(entry);
+const toc = headings.filter((h) => h.depth === 2);
+const alternates = await alternatesFor('projects', entry.data.translationKey);
+const fmt = (iso: string) => formatDate(new Date(iso), locale);
+---
+<Base locale={locale} title={entry.data.title} description={entry.data.summary} alternates={alternates} nav="projects" ogType="article">
+  <article>
+    <header class="case-head">
+      <p class="crumbs"><a href={localizePath(locale, 'projects')}>← {tr('project.back')}</a></p>
+      <h1>
+        {entry.data.title}
+        {entry.data.status === 'review' && <span class="flag">{tr('notice.review')}</span>}
+      </h1>
+      <p class="lede">{entry.data.summary}</p>
+    </header>
+
+    <div class="case-grid">
+      <aside class="case-aside" aria-label={entry.data.title}>
+        <dl class="spec">
+          <dt>{tr('project.role')}</dt>
+          <dd>{entry.data.role}</dd>
+          <dt>{tr('project.team')}</dt>
+          <dd>{facts.teamSize === 1 ? tr('project.solo') : tr('project.teamOf', { n: facts.teamSize })} · {tr(`project.kind.${facts.kind}` as UIKey)}</dd>
+          <dt>{tr('project.period')}</dt>
+          <dd><time datetime={facts.period.start}>{fmt(facts.period.start)}</time> – <time datetime={facts.period.end}>{fmt(facts.period.end)}</time></dd>
+          <dt>{tr('project.status')}</dt>
+          <dd>{tr(`project.status.${facts.status}` as UIKey)}</dd>
+          <dt>{tr('project.stack')}</dt>
+          <dd>{facts.stack.join(', ')}</dd>
+          <dt>{tr('project.repo')}</dt>
+          <dd><a href={facts.repo}>{facts.repo.replace('https://github.com/', '')}</a></dd>
+          <dt>{tr('project.revision')}</dt>
+          <dd><a class="mono" href={`${facts.repo}/tree/${facts.revision}`}>{facts.revision}</a></dd>
+        </dl>
+        {toc.length > 0 && (
+          <nav class="toc no-print" aria-labelledby="toc-h">
+            <h2 id="toc-h">{tr('project.toc')}</h2>
+            <ol>
+              {toc.map((h) => <li><a href={`#${h.slug}`}>{h.text}</a></li>)}
+            </ol>
+          </nav>
+        )}
+      </aside>
+
+      <div class="prose">
+        {facts.verification.length > 0 && (
+          <section class="verify" aria-label={tr('project.evidence')}>
+            <p class="mono muted">{tr('project.evidence')}</p>
+            {facts.verification.map((v) => (
+              <p>
+                <code>{v.command}</code><br />
+                <span class="evidence">{v.result[locale]}</span>
+                <span class="mono muted"> · {v.environment} · {tr('project.checkedOn')} <time datetime={v.checkedOn}>{fmt(v.checkedOn)}</time></span>
+              </p>
+            ))}
+          </section>
+        )}
+        <Content />
+      </div>
+    </div>
+  </article>
+</Base>

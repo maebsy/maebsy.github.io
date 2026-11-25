@@ -1,0 +1,20 @@
+---
+import Base from '../layouts/Base.astro';
+import { LOCALES, LOCALE_META, localizePath } from '../i18n/locales';
+import { t } from '../i18n/ui';
+
+// GitHub Pages serves /404.html for every unknown path, so this page is
+// trilingual instead of guessing the visitor's language.
+const none = { en: null, ja: null, ko: null };
+---
+<Base locale="en" title={t('en', '404.title')} alternates={none} nav="none" noindex>
+  <header class="hero">
+    <p class="kicker">404</p>
+    {LOCALES.map((l) => (
+      <section lang={LOCALE_META[l].htmlLang} style="margin-bottom: 2rem">
+        {l === 'en' ? <h1>{t(l, '404.title')}</h1> : <h2>{t(l, '404.title')}</h2>}
+        <p>{t(l, '404.text')} <a href={localizePath(l)}>{t(l, '404.home')}</a></p>
+      </section>
+    ))}
+  </header>
+</Base>

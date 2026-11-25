@@ -1,0 +1,52 @@
+---
+/**
+ * Featured projects as ruled rows. Title links to the localized case study
+ * when one is visible in this build; otherwise to the repository.
+ */
+import { formatDate, type Locale } from '../i18n/locales';
+import { t, type UIKey } from '../i18n/ui';
+import { FEATURED, type ProjectFacts } from '../data/projects';
+import { entriesFor, entryPath } from '../lib/content';
+
+interface Props {
+  locale: Locale;
+  projects?: ProjectFacts[];
+  headingLevel?: 'h2' | 'h3';
+}
+const { locale, projects = FEATURED } = Astro.props;
+const cases = await entriesFor('projects', locale);
+
+function period(p: ProjectFacts) {
+  const s = formatDate(new Date(p.period.start), locale);
+  const e = formatDate(new Date(p.period.end), locale);
+  return `${s} – ${e}`;
+}
+const rows = projects.map((p) => {
+  const entry = cases.find((c) => c.data.id === p.id);
+  return {
+    p,
+    entry,
+    href: entry ? entryPath('projects', locale, p.id) : p.repo,
+    title: entry?.data.title ?? p.id,
+    summary: entry?.data.summary ?? p.oneLiner[locale],
+  };
+});
+---
+<ol class="index">
+  {rows.map(({ p, entry, href, title, summary }) => (
+    <li>
+      <h3>
+        <a href={href}>{title}</a>
+        {entry?.data.status === 'review' && <span class="flag">{t(locale, 'notice.review')}</span>}
+      </h3>
+      <p>{summary}</p>
+      <ul class="meta">
+        <li>{t(locale, `project.kind.${p.kind}` as UIKey)}</li>
+        <li>{p.teamSize === 1 ? t(locale, 'project.solo') : t(locale, 'project.teamOf', { n: p.teamSize })}</li>
+        <li>{period(p)}</li>
+        {p.verification[0] && <li class="evidence">{p.verification[0].result[locale]}</li>}
+        <li><a href={p.repo}>{t(locale, 'project.repo')}</a></li>
+      </ul>
+    </li>
+  ))}
+</ol>

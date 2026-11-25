@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.astro/
+playwright-report/
+test-results/
+tests/e2e/__screenshots__/
+# Private review material and drafts must never live in this public repo.
+private/
+drafts/
+.env
+.env.*

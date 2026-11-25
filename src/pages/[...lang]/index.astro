@@ -1,0 +1,72 @@
+---
+import Base from '../../layouts/Base.astro';
+import Sheet from '../../components/Sheet.astro';
+import ProjectIndex from '../../components/ProjectIndex.astro';
+import SkillList from '../../components/SkillList.astro';
+import Timeline from '../../components/Timeline.astro';
+import { langPaths, localeFromParam, localizePath, formatDate } from '../../i18n/locales';
+import { useT } from '../../i18n/ui';
+import { PERSON, TIMELINE } from '../../data/profile';
+import { factVisible } from '../../data/site';
+import { entriesFor, entryPath, staticAlternates } from '../../lib/content';
+import { profilePageLd } from '../../lib/jsonld';
+
+export function getStaticPaths() {
+  return langPaths();
+}
+
+const locale = localeFromParam(Astro.params.lang);
+const tr = useT(locale);
+const alternates = staticAlternates('');
+const posts = (await entriesFor('blog', locale))
+  .sort((a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf())
+  .slice(0, 3);
+const links = PERSON.links.filter((l) => l.verified);
+const hasEducation = TIMELINE.some((i) => i.kind === 'education' && factVisible(i.verified));
+---
+<Base locale={locale} title={tr('home.title')} alternates={alternates} nav="home" ogType="profile" jsonLd={profilePageLd(locale, alternates[locale])}>
+  <section class="hero" aria-labelledby="hero-h">
+    <p class="kicker">{PERSON.location[locale]} · Data Engineering · AI/ML · Cloud</p>
+    <h1 id="hero-h">maebsy</h1>
+    <p class="role">{tr('home.role')}</p>
+    <p class="lede">{tr('home.lede')}</p>
+    <div class="actions">
+      <a class="btn primary" href={localizePath(locale, 'projects')}>{tr('home.cta.projects')}</a>
+      <a class="btn" href={localizePath(locale, 'resume')}>{tr('home.cta.resume')}</a>
+    </div>
+  </section>
+
+  <Sheet num="01" title={tr('home.selected')} id="selected">
+    <ProjectIndex locale={locale} />
+    <p class="small"><a href={localizePath(locale, 'projects')}>{tr('home.allProjects')} →</a></p>
+  </Sheet>
+
+  <Sheet num="02" title={tr('home.skills')} id="skills">
+    <p class="muted small">{tr('home.skills.note')}</p>
+    <SkillList locale={locale} />
+  </Sheet>
+
+  <Sheet num="03" title={hasEducation ? tr('home.timeline') : tr('about.activities')} id="timeline">
+    <Timeline locale={locale} />
+  </Sheet>
+
+  {posts.length > 0 && (
+    <Sheet num="04" title={tr('home.writing')} id="writing">
+      <ul class="compact">
+        {posts.map((p) => (
+          <li>
+            <time class="mono muted" datetime={p.data.publishedAt.toISOString().slice(0, 10)}>{formatDate(p.data.publishedAt, locale)}</time>
+            <p><a href={entryPath('blog', locale, p.data.id)}>{p.data.title}</a></p>
+          </li>
+        ))}
+      </ul>
+    </Sheet>
+  )}
+
+  <Sheet num={posts.length > 0 ? '05' : '04'} title={tr('home.contact')} id="contact">
+    <p>{tr('home.contact.text')}</p>
+    <ul class="links-inline">
+      {links.map((l) => <li><a href={l.url}>{l.label}</a></li>)}
+    </ul>
+  </Sheet>
+</Base>

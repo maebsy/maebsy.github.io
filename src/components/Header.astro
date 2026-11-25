@@ -1,0 +1,48 @@
+---
+import { localizePath, type Locale } from '../i18n/locales';
+import { t, type UIKey } from '../i18n/ui';
+import { sectionHasContent } from '../lib/content';
+import type { NavKey } from '../lib/nav';
+import LangSwitch from './LangSwitch.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+interface Props {
+  locale: Locale;
+  alternates: Record<Locale, string | null>;
+  nav: NavKey;
+}
+const { locale, alternates, nav } = Astro.props;
+
+// Blog, Notes and Research appear only once they have visible content,
+// so the site never shows an empty "coming soon" section.
+const items: { key: Exclude<NavKey, 'home' | 'none'>; show: boolean }[] = [
+  { key: 'projects', show: true },
+  { key: 'blog', show: await sectionHasContent('blog') },
+  { key: 'notes', show: await sectionHasContent('notes') },
+  { key: 'research', show: await sectionHasContent('research') },
+  { key: 'about', show: true },
+  { key: 'resume', show: true },
+];
+---
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href={localizePath(locale)} aria-current={nav === 'home' ? 'page' : undefined}>
+      <b>maebsy</b><span> / data engineering</span>
+    </a>
+    <div class="header-tools">
+      <nav class="nav" aria-label={t(locale, 'nav.label')}>
+        <ul>
+          {items.filter((i) => i.show).map((i) => (
+            <li>
+              <a href={localizePath(locale, i.key)} aria-current={nav === i.key ? 'page' : undefined}>
+                {t(locale, `nav.${i.key}` as UIKey)}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <LangSwitch locale={locale} alternates={alternates} />
+      <ThemeToggle locale={locale} />
+    </div>
+  </div>
+</header>

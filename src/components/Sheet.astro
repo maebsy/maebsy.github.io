@@ -1,0 +1,18 @@
+---
+/** Section with a numbered label in the left rail (stacks above content on narrow screens). */
+interface Props {
+  num?: string;
+  title: string;
+  id: string;
+}
+const { num, title, id } = Astro.props;
+---
+<section class="sheet" aria-labelledby={`${id}-h`} id={id}>
+  <div class="rail">
+    {num && <span class="num" aria-hidden="true">{num}</span>}
+    <h2 id={`${id}-h`}>{title}</h2>
+  </div>
+  <div class="body">
+    <slot />
+  </div>
+</section>

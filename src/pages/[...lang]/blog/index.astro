@@ -1,0 +1,62 @@
+---
+import Base from '../../../layouts/Base.astro';
+import { LOCALE_META, LOCALES, langParam, formatDate, isoDate, type Locale } from '../../../i18n/locales';
+import { useT } from '../../../i18n/ui';
+import { visibleEntries, entryPath, staticAlternates } from '../../../lib/content';
+
+// The blog index exists only when at least one post is visible.
+export async function getStaticPaths() {
+  const posts = await visibleEntries('blog');
+  if (posts.length === 0) return [];
+  return LOCALES.map((l) => ({ params: { lang: langParam(l) }, props: { locale: l } }));
+}
+const { locale } = Astro.props as { locale: Locale };
+const tr = useT(locale);
+const all = (await visibleEntries('blog')).sort((a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf());
+const mine = all.filter((p) => p.data.locale === locale);
+const myKeys = new Set(mine.map((p) => p.data.translationKey));
+// Posts that have no version in this locale: link the original, labeled with its language.
+const seen = new Set<string>();
+const others = all.filter((p) => {
+  if (p.data.locale === locale || myKeys.has(p.data.translationKey) || seen.has(p.data.translationKey)) return false;
+  seen.add(p.data.translationKey);
+  return true;
+});
+---
+<Base locale={locale} title={tr('blog.title')} alternates={staticAlternates('blog')} nav="blog">
+  <header class="hero">
+    <h1>{tr('blog.title')}</h1>
+    <p class="lede">{tr('blog.lede')}</p>
+  </header>
+  {mine.length === 0 && others.length === 0 && <p>{tr('blog.empty')}</p>}
+  {mine.length > 0 && (
+    <ol class="index">
+      {mine.map((p) => (
+        <li>
+          <h3>
+            <a href={entryPath('blog', locale, p.data.id)}>{p.data.title}</a>
+            {p.data.status === 'review' && <span class="flag">{tr('notice.review')}</span>}
+          </h3>
+          <p>{p.data.summary}</p>
+          <ul class="meta">
+            <li><time datetime={isoDate(p.data.publishedAt)}>{formatDate(p.data.publishedAt, locale)}</time></li>
+            {p.data.tags.map((tag) => <li>#{tag}</li>)}
+          </ul>
+        </li>
+      ))}
+    </ol>
+  )}
+  {others.length > 0 && (
+    <section class="sheet" aria-labelledby="other-lang">
+      <div class="rail"><h2 id="other-lang">{tr('blog.otherLang')}</h2></div>
+      <ul class="compact body">
+        {others.map((p) => (
+          <li>
+            <span class="mono muted">{LOCALE_META[p.data.locale as Locale].label} · {formatDate(p.data.publishedAt, locale)}</span>
+            <p><a href={entryPath('blog', p.data.locale as Locale, p.data.id)} hreflang={p.data.locale} lang={p.data.locale}>{p.data.title}</a></p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+</Base>

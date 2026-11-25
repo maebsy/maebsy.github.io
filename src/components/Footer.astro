@@ -1,0 +1,15 @@
+---
+import type { Locale } from '../i18n/locales';
+import { t } from '../i18n/ui';
+import { SITE } from '../data/site';
+interface Props { locale: Locale }
+const { locale } = Astro.props;
+---
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 {SITE.handle} · {t(locale, 'footer.built')}</p>
+    <p>
+      {t(locale, 'footer.updated')}: <time datetime={SITE.updatedAt}>{SITE.updatedAt.replaceAll('-', '.')}</time>{' · '}<a href={SITE.sourceRepo}>{t(locale, 'footer.source')}</a>
+    </p>
+  </div>
+</footer>

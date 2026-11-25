@@ -1,0 +1,31 @@
+---
+import { LOCALES, LOCALE_META, type Locale } from '../i18n/locales';
+import { t } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+  alternates: Record<Locale, string | null>;
+}
+const { locale, alternates } = Astro.props;
+---
+<nav aria-label={t(locale, 'lang.label')}>
+  <ul class="lang-switch">
+    {LOCALES.map((l) => {
+      const href = alternates[l];
+      const meta = LOCALE_META[l];
+      if (l === locale) {
+        return <li><span aria-current="true" lang={meta.htmlLang}>{meta.label}</span></li>;
+      }
+      if (href) {
+        return <li><a href={href} hreflang={meta.htmlLang} lang={meta.htmlLang}>{meta.label}</a></li>;
+      }
+      return (
+        <li>
+          <span class="missing" lang={meta.htmlLang} title={t(l, 'lang.missing')}>
+            {meta.label}<span class="visually-hidden" lang={LOCALE_META[locale].htmlLang}> ({t(locale, 'lang.missing')})</span>
+          </span>
+        </li>
+      );
+    })}
+  </ul>
+</nav>

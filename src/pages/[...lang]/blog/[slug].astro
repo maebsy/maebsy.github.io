@@ -1,0 +1,52 @@
+---
+import { render } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import { langParam, localizePath, formatDate, isoDate, type Locale } from '../../../i18n/locales';
+import { useT } from '../../../i18n/ui';
+import { visibleEntries, alternatesFor, entryPath } from '../../../lib/content';
+import { articleLd } from '../../../lib/jsonld';
+
+export async function getStaticPaths() {
+  const entries = await visibleEntries('blog');
+  return entries.map((entry) => ({
+    params: { lang: langParam(entry.data.locale as Locale), slug: entry.data.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const locale = entry.data.locale as Locale;
+const tr = useT(locale);
+const { Content } = await render(entry);
+const alternates = await alternatesFor('blog', entry.data.translationKey);
+const url = entryPath('blog', locale, entry.data.id);
+const updated = entry.data.updatedAt.valueOf() !== entry.data.publishedAt.valueOf();
+---
+<Base
+  locale={locale}
+  title={entry.data.title}
+  description={entry.data.summary}
+  alternates={alternates}
+  nav="blog"
+  ogType="article"
+  jsonLd={articleLd({ locale, url, title: entry.data.title, description: entry.data.summary, published: entry.data.publishedAt, updated: entry.data.updatedAt })}
+>
+  <article>
+    <header class="case-head">
+      <p class="crumbs"><a href={localizePath(locale, 'blog')}>← {tr('blog.title')}</a></p>
+      <h1>
+        {entry.data.title}
+        {entry.data.status === 'review' && <span class="flag">{tr('notice.review')}</span>}
+      </h1>
+      <ul class="meta">
+        <li>{tr('post.published')} <time datetime={isoDate(entry.data.publishedAt)}>{formatDate(entry.data.publishedAt, locale)}</time></li>
+        {updated && <li>{tr('post.updated')} <time datetime={isoDate(entry.data.updatedAt)}>{formatDate(entry.data.updatedAt, locale)}</time></li>}
+        {entry.data.tags.map((tag) => <li>#{tag}</li>)}
+        {entry.data.zennUrl && <li><a href={entry.data.zennUrl}>Zenn</a></li>}
+      </ul>
+    </header>
+    <div class="prose" style="padding-top: 2rem">
+      <Content />
+    </div>
+  </article>
+</Base>

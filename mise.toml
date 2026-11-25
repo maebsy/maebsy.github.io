@@ -1,0 +1,4 @@
+# Optional: matches the local toolchain used for development and CI.
+[tools]
+bun = "1.4.4"
+node = "24"

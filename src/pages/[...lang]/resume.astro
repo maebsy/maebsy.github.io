@@ -1,0 +1,108 @@
+---
+import Base from '../../layouts/Base.astro';
+import { langPaths, localeFromParam, formatMonth, type Locale } from '../../i18n/locales';
+import { useT, type UIKey } from '../../i18n/ui';
+import { PERSON, TIMELINE, type TimelineItem } from '../../data/profile';
+import { FEATURED, OTHER } from '../../data/projects';
+import { SKILLS } from '../../data/skills';
+import { RESUME_SUMMARY } from '../../data/about';
+import { factVisible, SITE } from '../../data/site';
+import { entriesFor, staticAlternates } from '../../lib/content';
+
+export function getStaticPaths() {
+  return langPaths();
+}
+const locale: Locale = localeFromParam(Astro.params.lang);
+const tr = useT(locale);
+const cases = await entriesFor('projects', locale);
+const visible = (kind: TimelineItem['kind']) => TIMELINE.filter((i) => i.kind === kind && factVisible(i.verified));
+const ym = (iso: string) => formatMonth(iso.slice(0, 7));
+const name = PERSON.nameFact.verified ? PERSON.name[locale] : undefined;
+---
+<Base locale={locale} title={tr('resume.title')} alternates={staticAlternates('resume')} nav="resume">
+  <div class="resume-tools no-print">
+    <button type="button" class="btn" id="print-btn">{tr('resume.print')}</button>
+    <span class="small muted">{tr('resume.note')}</span>
+  </div>
+  <article class="resume">
+    <header>
+      <h1>{name ?? PERSON.handle}</h1>
+      <p>{tr('home.role')}</p>
+      <p class="mono muted">
+        {PERSON.location[locale]} ·
+        {PERSON.links.filter((l) => l.verified).map((l, i) => <>{i > 0 && ' · '}<a href={l.url}>{l.url.replace('https://', '')}</a></>)}
+        · <a href={SITE.url}>{SITE.url.replace('https://', '')}</a>
+      </p>
+    </header>
+
+    <section aria-labelledby="r-summary">
+      <h2 id="r-summary">{tr('resume.summary')}</h2>
+      <p>{RESUME_SUMMARY[locale]}</p>
+    </section>
+
+    <section aria-labelledby="r-projects">
+      <h2 id="r-projects">{tr('resume.projects')}</h2>
+      {FEATURED.map((p) => {
+        const entry = cases.find((c) => c.data.id === p.id);
+        return (
+          <div class="resume-item">
+            <h3>
+              <span><a href={p.repo}>{entry?.data.title ?? p.id}</a> <span class="muted small">· {p.teamSize === 1 ? tr('project.solo') : tr('project.teamOf', { n: p.teamSize })} · {tr(`project.kind.${p.kind}` as UIKey)}</span></span>
+              <span class="when">{ym(p.period.start)}{ym(p.period.start) !== ym(p.period.end) && ` – ${ym(p.period.end)}`}</span>
+            </h3>
+            <p>{p.oneLiner[locale]}</p>
+            <ul>
+              {entry && <li>{tr('project.role')}: {entry.data.role}</li>}
+              <li>{tr('project.stack')}: {p.stack.join(', ')}</li>
+              {p.verification.map((v) => <li>{tr('project.evidence')}: {v.result[locale]} (<code>{v.command}</code>)</li>)}
+            </ul>
+          </div>
+        );
+      })}
+      <div class="resume-item">
+        <h3><span>{tr('projects.other')}</span></h3>
+        <ul>
+          {OTHER.map((p) => <li><a href={p.repo}>{p.id}</a>: {p.oneLiner[locale]}</li>)}
+        </ul>
+      </div>
+    </section>
+
+    <section aria-labelledby="r-skills">
+      <h2 id="r-skills">{tr('resume.skills')}</h2>
+      <ul>
+        {SKILLS.map((s) => (
+          <li><strong>{s.name[locale]}</strong> ({s.level === 'used' ? tr('skill.level.used') : tr('skill.level.fundamentals')}): {s.detail[locale]}</li>
+        ))}
+      </ul>
+    </section>
+
+    {visible('education').length > 0 && (
+      <section aria-labelledby="r-edu">
+        <h2 id="r-edu">{tr('resume.education')}</h2>
+        {visible('education').map((i) => (
+          <div class="resume-item">
+            <h3><span>{i.org[locale]} {!i.verified && <span class="flag">{tr('notice.unverified')}</span>}</span></h3>
+            <p>{i.title[locale]}</p>
+            {i.detail && <p class="muted">{i.detail[locale]}</p>}
+          </div>
+        ))}
+      </section>
+    )}
+
+    <section aria-labelledby="r-act">
+      <h2 id="r-act">{tr('resume.activities')}</h2>
+      {visible('activity').map((i) => (
+        <div class="resume-item">
+          <h3>
+            <span>{i.title[locale]}</span>
+            {i.start && <span class="when">{formatMonth(i.start)}{i.end && i.end !== i.start && ` – ${formatMonth(i.end)}`}</span>}
+          </h3>
+          <p class="muted">{i.org[locale]}</p>
+        </div>
+      ))}
+    </section>
+  </article>
+  <script is:inline>
+    document.getElementById('print-btn')?.addEventListener('click', function () { window.print(); });
+  </script>
+</Base>
