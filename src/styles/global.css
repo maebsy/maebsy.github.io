@@ -519,6 +519,7 @@ main { display: block; padding-block: 2.5rem 4rem; }
   }
   body { font-size: 10pt; line-height: 1.5; }
   :lang(ja) body { font-size: 9.5pt; line-height: 1.65; }
+  :lang(ko) body { font-size: 9.5pt; line-height: 1.55; }
   .site-header, .site-footer, .preview-banner, .skip-link, .no-print, .theme-toggle { display: none !important; }
   main { padding: 0; }
   .wrap { max-width: none; padding: 0; }
